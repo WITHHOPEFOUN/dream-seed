@@ -67,42 +67,44 @@ router.get(/^\/BlockHistory$/, async(req, res) => {
 	for(var item of data) {
 		if(['aclgroup_add', 'aclgroup_remove'].includes(item.type) && !ver('4.18.0')) continue;
 		
+		const logEntry = `${generateTime(toDate(item.date), timeFormat)} ${ip_pas(item.executer, item.ismember, 0, 1)} 사용자가 ${item.target} <i>(${
+			item.type == 'aclgroup_add'
+			? `<b>${item.aclgroup}</b> ACL 그룹에 추가`
+			: (
+			item.type == 'aclgroup_remove'
+			? `<b>${item.aclgroup}</b> ACL 그룹에서 제거`
+			: (
+			item.type == 'ipacl_add'
+			? `IP 주소 차단`
+			: (
+			item.type == 'ipacl_remove'
+			? `IP 주소 차단 해제`
+			: (
+			item.type == 'login_history'
+			? `사용자 로그인 기록 조회`
+			: (
+			item.type == 'suspend_account' && item.duration != '-1'
+			? `사용자 차단`
+			: (
+			item.type == 'suspend_account' && item.duration == '-1'
+			? `사용자 차단 해제`
+			: (
+			item.type == 'grant'
+			? `사용자 권한 설정`
+			: ''
+			)))))))
+		})</i> ${item.type == 'aclgroup_add' || item.type == 'aclgroup_remove' ? `#${item.id}` : ''} ${
+			item.type == 'aclgroup_add' || item.type == 'ipacl_add' || (item.type == 'suspend_account' && item.duration != '-1')
+			? (ver('4.0.20') ? `(${item.duration == '0' ? '영구적으로' : `${parses(item.duration)} 동안`})` : `(${item.duration} 동안)`)
+			: ''
+		} ${
+			item.type == 'aclgroup_add' || item.type == 'aclgroup_remove' || item.type == 'ipacl_add' || item.type == 'suspend_account' || item.type == 'grant'
+			? `(<span style="color: gray;">${item.note}</span>)`
+			: ''
+		}`;
+		
 		content += `
-			<li>${generateTime(toDate(item.date), timeFormat)} ${ip_pas(item.executer, item.ismember, 0, 1)} 사용자가 ${item.target} <i>(${
-				item.type == 'aclgroup_add'
-				? `<b>${item.aclgroup}</b> ACL 그룹에 추가`
-				: (
-				item.type == 'aclgroup_remove'
-				? `<b>${item.aclgroup}</b> ACL 그룹에서 제거`
-				: (
-				item.type == 'ipacl_add'
-				? `IP 주소 차단`
-				: (
-				item.type == 'ipacl_remove'
-				? `IP 주소 차단 해제`
-				: (
-				item.type == 'login_history'
-				? `사용자 로그인 기록 조회`
-				: (
-				item.type == 'suspend_account' && item.duration != '-1'
-				? `사용자 차단`
-				: (
-				item.type == 'suspend_account' && item.duration == '-1'
-				? `사용자 차단 해제`
-				: (
-				item.type == 'grant'
-				? `사용자 권한 설정`
-				: ''
-				)))))))
-			})</i> ${item.type == 'aclgroup_add' || item.type == 'aclgroup_remove' ? `#${item.id}` : ''} ${
-				item.type == 'aclgroup_add' || item.type == 'ipacl_add' || (item.type == 'suspend_account' && item.duration != '-1')
-				? (ver('4.0.20') ? `(${item.duration == '0' ? '영구적으로' : `${parses(item.duration)} 동안`})` : `(${item.duration} 동안)`)
-				: ''
-			} ${
-				item.type == 'aclgroup_add' || item.type == 'aclgroup_remove' || item.type == 'ipacl_add' || item.type == 'suspend_account' || item.type == 'grant'
-				? `(<span style="color: gray;">${item.note}</span>)`
-				: ''
-			}</li>
+			<li>${logEntry} <button onclick="copyToClipboard('${html.escape(logEntry)}')">복사</button></li>
 		`;
 	}
 	
@@ -110,6 +112,20 @@ router.get(/^\/BlockHistory$/, async(req, res) => {
 		</ul>
 		
 		${navbtns}
+	`;
+	
+	content += `
+		<script>
+			function copyToClipboard(text) {
+				const textarea = document.createElement('textarea');
+				textarea.value = text;
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textarea);
+				alert('복사되었습니다!');
+			}
+		</script>
 	`;
 	
 	return res.send(await render(req, '차단 내역', content, {}, _, _, 'block_history'));
