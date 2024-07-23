@@ -1,8 +1,14 @@
 router.get(/^\/License$/, async(req, res) => {
 	var licepage = `
-		<p>imitated-seed</p>
-		<p>(the seed v${version.major}.${version.minor}.${version.revision})</p>
-	`;
+		<p>dream-seed</p>
+		<p>(v${version.major}.${version.minor}.${version.revision})</p>
+	<p>Copyright <a href="https://rudalive.me">루다라이브</a> all rights reserved.</p>
+			
+			<h3>Contributors</h3>
+			<ul class=wiki-list>
+						<li>myorubin@rudalive.me (backend & frontend)</li>
+			</ul>
+			`;
 	
 	if(hostconfig.replicate_theseed_license) {
 		licepage = '';
